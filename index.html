@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Check-in · Boda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #F6EFE8;
+      --card: rgba(255, 255, 255, 0.72);
+      --card-solid: #FFFFFF;
+      --ink: #2F4F2F;
+      --mut: #2F4F2F;
+      --acc: #B75D3E;
+      --acc2: #2F4F2F;
+      --gold: #C7943D;
+      --ok: #556B2F;
+      --line: rgba(184, 140, 100, 0.38);
+      --onacc: #FFFFFF;
+      --names: #2F4F2F;
+      color-scheme: light;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      color: var(--ink);
+      font-family: 'Nunito Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(155deg, #FFFFFF 0%, #F5EDE4 44%, #9B7458 78%, #3B2316 100%);
+      background-attachment: fixed;
+    }
+
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 30px 20px 100px;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    .eyebrow {
+      letter-spacing: .3em;
+      font-size: 13px;
+      color: var(--ink);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(44px, 9vw, 78px);
+      margin: 8px 0 2px;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.05;
+    }
+
+    #names {
+      color: var(--names);
+    }
+
+    .orn {
+      color: var(--gold);
+      letter-spacing: .6em;
+      font-size: 14px;
+      margin: 8px 0;
+    }
+
+    .sub {
+      color: var(--ink);
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .search {
+      position: relative;
+      margin: 26px 0 20px;
+    }
+
+    .search svg {
+      position: absolute;
+      left: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink);
+      z-index: 2;
+    }
+
+    #q {
+      width: 100%;
+      font: inherit;
+      font-size: 26px;
+      padding: 20px 24px 20px 66px;
+      border-radius: 999px;
+      border: 1.5px solid var(--line);
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--ink);
+      outline: none;
+      box-shadow: 0 4px 20px rgba(59, 35, 22, 0.06);
+    }
+
+    #q::placeholder {
+      color: rgba(47, 79, 47, 0.65);
+    }
+
+    #q:focus {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: var(--acc);
+      box-shadow: 0 0 0 5px rgba(183, 93, 62, 0.16);
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--ink);
+      font-size: 19px;
+      font-weight: 600;
+      margin: 28px auto;
+      padding: 0 12px;
+    }
+
+    .card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--acc);
+      border-radius: 18px;
+      padding: 16px 22px;
+      margin-bottom: 12px;
+      font: inherit;
+      color: var(--ink);
+      cursor: pointer;
+      min-height: 88px;
+      box-shadow: 0 6px 20px rgba(59, 35, 22, 0.12);
+    }
+
+    .card b {
+      font-size: 24px;
+      display: block;
+      color: var(--ink);
+    }
+
+    .card small {
+      color: var(--ink);
+      opacity: 0.82;
+      font-size: 16px;
+    }
+
+    .card em {
+      font-style: normal;
+      color: var(--ok);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .mesa {
+      text-align: center;
+      background: var(--acc);
+      color: var(--onacc);
+      border-radius: 14px;
+      padding: 8px 18px;
+      min-width: 84px;
+      flex: none;
+    }
+
+    .mesa span {
+      font-size: 12px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .mesa strong {
+      font-size: 34px;
+      line-height: 1.1;
+    }
+
+    .foot {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 20px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+      text-align: center;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 15px;
+      background: linear-gradient(transparent, rgba(255, 255, 255, 0.78) 55%);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .gear {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      right: 14px;
+      opacity: .6;
+      background: none;
+      border: 0;
+      font-size: 28px;
+      color: var(--ink);
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .ov {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(155deg, #FFFFFF 0%, #F5EDE4 55%, #DFCBB9 100%);
+      overflow: auto;
+      z-index: 20;
+      display: none;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .ov.on {
+      display: block;
+    }
+
+    .pane {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 30px 20px 50px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .lbl {
+      color: var(--ink);
+      font-size: 19px;
+      margin: 14px 0 6px;
+      letter-spacing: .04em;
+    }
+
+    .big {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(110px, 26vw, 170px);
+      line-height: 1;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    h2 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 44px;
+      color: var(--ink);
+      margin: 6px 0;
+    }
+
+    .chk {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--ok);
+      color: #fff;
+      font-size: 54px;
+      display: grid;
+      place-items: center;
+      margin: 20px auto 6px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1.5px solid var(--line);
+      background: rgba(255, 255, 255, 0.85);
+      margin-bottom: 10px;
+      font: inherit;
+      font-size: 22px;
+      color: var(--ink);
+      text-align: left;
+      min-height: 68px;
+      cursor: pointer;
+    }
+
+    .row.sel {
+      border-color: var(--ok);
+      background: rgba(85, 107, 47, 0.13);
+    }
+
+    .row.done {
+      opacity: .7;
+    }
+
+    .box {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 20px;
+      flex: none;
+    }
+
+    .sel .box, .done .box {
+      background: var(--ok);
+      border-color: var(--ok);
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      font: inherit;
+      font-weight: 700;
+      font-size: 22px;
+      padding: 18px 28px;
+      border-radius: 999px;
+      border: 0;
+      background: var(--acc);
+      color: var(--onacc);
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    .btn.ghost {
+      background: rgba(255, 255, 255, 0.65);
+      color: var(--ink);
+      border: 1.5px solid var(--line);
+      margin-top: 10px;
+    }
+
+    .btn.sm {
+      display: inline-block;
+      width: auto;
+      font-size: 17px;
+      padding: 12px 20px;
+      margin: 8px 8px 0 0;
+    }
+
+    .btn:disabled {
+      opacity: .4;
+    }
+
+    .ad h3 {
+      margin: 26px 0 6px;
+      color: var(--ink);
+      font-size: 20px;
+    }
+
+    .ad p, .ad li {
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .mut {
+      color: var(--ink);
+      opacity: 0.85;
+    }
+
+    .ad label {
+      display: block;
+      font-size: 15px;
+      color: var(--ink);
+      margin: 10px 0;
+    }
+
+    .ad input:not([type=file]) {
+      display: block;
+      width: 100%;
+      font: inherit;
+      font-size: 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      background: var(--card-solid);
+      color: var(--ink);
+      margin-top: 4px;
+    }
+
+    .ad details {
+      background: var(--card-solid);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin: 6px 0;
+      color: var(--ink);
+    }
+
+    .ad summary {
+      font-weight: 700;
+      font-size: 17px;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 90px;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--onacc);
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 16px;
+      z-index: 40;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <button class="gear" id="gear" aria-label="Organizador">⚙</button>
+
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Bienvenidos</div>
+      <h1 id="names"></h1>
+      <div class="orn">◆ ◆ ◆</div>
+      <p class="sub">Escribe tu nombre para encontrar tu mesa</p>
+    </header>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-4-4" />
+      </svg>
+      <input id="q" type="search" placeholder="Tu nombre o apellido…" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="search">
+    </div>
+
+    <div id="res"></div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+  <div class="ov" id="detail"></div>
+  <div class="ov" id="admin"></div>
+  <div id="toast"></div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const K = 'boda-checkin-v2';
+    let S = {
+      cfg: { names: 'Alex & Valery', cap: 10, pin: '1234' },
+      parties: [],
+      demo: false
+    };
+    let cur = 0;
+    let curName = '';
+    let sel = new Set();
+    let tm;
+
+    try {
+      const r = JSON.parse(localStorage.getItem(K) || 'null');
+      if (r) {
+        S = Object.assign(S, r);
+        S.cfg = Object.assign({ names: 'Alex & Valery', cap: 10, pin: '1234' }, r.cfg);
+      }
+    } catch (e) {}
+
+    const save = () => {
+      try {
+        localStorage.setItem(K, JSON.stringify(S));
+      } catch (e) {}
+    };
+
+    const norm = s => String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
+
+    function toast(t) {
+      const e = $('#toast');
+      e.textContent = t;
+      e.style.display = 'block';
+      clearTimeout(e._t);
+      e._t = setTimeout(() => e.style.display = 'none', 2600);
+    }
+
+    const INIT = [
+      "4:Javier Méndez|Iris Méndez|Sofía Cetino|Francisco Cetino",
+      "3:Lissa Estrada|Estuardo Villagrán|Andreé Villagrán",
+      "3:Estefany Álvarez|Yurem|Hermayonie",
+      "1:Rubelcy Alvarado",
+      "1:Dina Pérez",
+      "1:JULIA MELECIO",
+      "2:Karen Méndez|Alan Tol",
+      "2:Lilian alvarez|Gustavo Girón",
+      "2:Nimcy Méndez|Enrique Garzona",
+      "1:María Nicte Méndez",
+      "2:Bener Herrera|Dayerlin de la Roca",
+      "2:Eddy de León|Betzaida Cardenas",
+      "4:Julio Méndez|Juanita Gámez|Marco Velásquez|Adely Rodríguez",
+      "2:Noshita Gutiérrez|Ramiro Melecio",
+      "2:Juan Luis Barrios|Elisa Mazariegos",
+      "1:Caterine Del Aguila",
+      "3:Andrea Betzabe Argueta Luch|Jorge Daniel Díaz Gramajo|Josué Daniel Díaz Argueta",
+      "1:Isabel Santizo",
+      "4:Emy Berreondo|Carlos Quiñones|José Luis Vásquez|Cristian Berreondo",
+      "2:Yohanis Castillo|Daniel González",
+      "2:Felipe Mendez|Ruth Guevara de Mendez",
+      "2:Susy Asturias|Mi esposo jose",
+      "2:Jaime Ralios|Nicolás Ralios",
+      "5:Daniel Pereda|Deborah Alvarado|Daniel Pereda|Maria Pereda|Santiago Pereda",
+      "2:Ruth Urizar|Robin De Leon",
+      "2:Kathia Alvarado|Maribel Mèndez",
+      "1:Megan Isabel Alayo Urízar",
+      "4:Sergio Fermin Israel Figueroa Urizar|Kemberlin cotreras|Hilary Figueroa|Sergio Figueroa",
+      "2:Cristhel figueroa|Juan quieroa",
+      "2:Dilan figueroa sanchez|Pamela Rodríguez",
+      "1:Linita Pérez",
+      "2:Karina Pérez Sánchez|Kevin Quezada",
+      "1:Julio carrascoza",
+      "2:Justo figueroa|Mileny Carrascoza",
+      "2:Mily Muñoz|Manuel Perez",
+      "1:Elba Jimenez",
+      "2:Odeth sanchez|Eduardo Pérez",
+      "4:Kristhel Álvarez|Sindy de Leon|Gisell Álvarez|Aaron cano",
+      "1:Jorge Álvarez",
+      "2:Dany Carrascoza|Daniel Ramos",
+      "1:Maura Carrascoza",
+      "1:Magnolia Alvarado",
+      "2:Misael Pérez|Felipe Pérez",
+      "3:Josselyn Alvarez|Magdaly Quezada|Mayra Vega y Marian Alvarez",
+      "2:Talsirys Abreu de Ortega|Alejo Ortega (Danilo)",
+      "3:Amanda Muñoz|Rolando Muñoz|Billy Muñoz",
+      "4:Vanessa Muñoz|Rocael Muñoz|Marina Velásquez|Hermelinda De Muñoz",
+      "2:Yeison Muñoz|Jasmin Montufar",
+      "3:Sindy Yamilex Figueroa Urizar|Gilda Urizar|Sergie Cabrera",
+      "1:Dulce Cabrera",
+      "1:Annielys Sánchez",
+      "3:Donal Eduardo de León Santos|Ariedna Edliette de León Melecio|Edna Lourdes Melecio Gutierrez",
+      "2:Juan Luis Orozco|Lucy Rendón",
+      "4:René Urizar|Z|J|D",
+      "2:Sharon Rodríguez|Fernando Rodríguez",
+      "1:Rodrigo Cotoc",
+      "2:Yesenia Najarro|Luis Miranda",
+      "5:Xuxy Melecio|Juan Gámez|Dorian|Angie|Juan Diego",
+      "2:Angel Melecio Gutierrez|Merlin Ramos",
+      "4:Lester Molina|Ana Maria Sánchez Figueroa|Lester Donaldo Molina Herrera|María Evelia Sánchez Figueroa",
+      "2:Carol Orozco|Juan Pablo Mendez",
+      "1:Eduardo Quezada",
+      "5:Ernesto Berreondo Méndez|Ernesto Berreondo Méndez|Yaquelin Yanira Santos Méndez|Josué Alejandro Berreondo Santos|Astrid y Sofia Berreondo Santos",
+      "1:Fernando Menchu",
+      "2:Mario Méndez Peña|Mario Mendez Muñoz",
+      "1:JESÚS MANOLO GIRÓN CARRASCOZA",
+      "1:Elizabeth Sánchez Figueroa",
+      "1:Aurora Estrada Roca",
+      "2:Pablo Morales|Marielos",
+      "3:Jaqueline Sanchez|Maddie|Diana",
+      "2:Luis Urízar|Luis",
+      "2:Gelin Urizar|Juan José Corado",
+      "1:Sindy Alvarez",
+      "2:Ramiro Samayoa|Ete de Samayoa",
+      "2:Jaidi Urizar|José Daniel Soto",
+      "3:Francisco Sanchez|Oneyda Urizar|Brandon Sanchez",
+      "2:Jeny URIZAR|Eduardo Salazar"
+    ];
+
+    const tc = s => s.replace(/\S+/g, w =>
+      (w === w.toUpperCase() || w === w.toLowerCase()) && w.length > 1 && !/^(de|del|la|las|y)$/i.test(w)
+        ? w[0].toUpperCase() + w.slice(1).toLowerCase()
+        : w
+    );
+
+    const dedupe = a => {
+      const s = new Set();
+      return a
+        .map(x => tc(String(x).trim()))
+        .filter(x => x && !s.has(norm(x)) && s.add(norm(x)));
+    };
+
+    function demo() {
+      S.parties = INIT.map(s => {
+        const k = s.indexOf(':');
+        const ms = dedupe(s.slice(k + 1).split('|'));
+        return {
+          members: ms.map(n => ({ n, in: false })),
+          seats: Math.max(ms.length, +s.slice(0, k) || 0),
+          table: '',
+          fixed: false
+        };
+      });
+      S.demo = true;
+      assign();
+      save();
+    }
+
+    function assign() {
+      const used = {};
+      S.parties.forEach(p => {
+        if (p.fixed && p.table) {
+          used[p.table] = (used[p.table] || 0) + (p.seats || p.members.length);
+        }
+      });
+
+      S.parties
+        .filter(p => !p.fixed)
+        .sort((a, b) => (b.seats || b.members.length) - (a.seats || a.members.length))
+        .forEach(p => {
+          const z = p.seats || p.members.length;
+          let n = 1;
+          while ((used[n] || 0) > 0 && used[n] + z > S.cfg.cap) n++;
+          p.table = String(n);
+          used[n] = (used[n] || 0) + z;
+        });
+    }
+
+    function stats() {
+      const t = S.parties.reduce((a, p) => a + p.members.length, 0);
+      const i = S.parties.reduce((a, p) => a + p.members.filter(m => m.in).length, 0);
+      return [i, t];
+    }
+
+    function foot() {
+      const [i, t] = stats();
+      $('#foot').textContent = t ? `${i} de ${t} invitados han llegado` : '';
+    }
+
+    function results() {
+      const q = norm($('#q').value);
+      const box = $('#res');
+
+      if (q.length < 2) {
+        box.innerHTML = '<p class="hint">Empieza a escribir y aparecerá tu nombre</p>';
+        return;
+      }
+
+      const toks = q.split(/\s+/);
+      const out = [];
+
+      S.parties.forEach((p, i) => {
+        const j = p.members.findIndex(m => {
+          const n = norm(m.n);
+          return toks.every(t => n.includes(t));
+        });
+        if (j >= 0) out.push([p, i, j]);
+      });
+
+      if (!out.length) {
+        box.innerHTML = '<p class="hint">No encontramos ese nombre. Prueba con tu apellido o pregunta en la recepción.</p>';
+        return;
+      }
+
+      box.innerHTML = out.slice(0, 8).map(([p, i, j]) => {
+        const others = p.members
+          .filter((_, k) => k !== j)
+          .map(m => m.n.split(' ')[0])
+          .join(', ');
+        const all = p.members.every(m => m.in);
+
+        return `
+          <button class="card" data-i="${i}" data-m="${j}">
+            <div>
+              <b>${esc(p.members[j].n)}</b>
+              <small>${others ? 'Con ' + esc(others) : 'Invitado individual'}</small>
+              ${all ? '<br><em>✓ Ya registrado</em>' : ''}
+            </div>
+            <div class="mesa">
+              <span>Mesa</span>
+              <strong>${esc(p.table)}</strong>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    $('#q').addEventListener('input', results);
+
+    $('#res').addEventListener('click', e => {
+      const b = e.target.closest('.card');
+      if (!b) return;
+
+      cur = +b.dataset.i;
+      const p = S.parties[cur];
+      curName = p.members[+b.dataset.m].n;
+      sel = new Set(p.members.map((m, j) => m.in ? -1 : j).filter(j => j >= 0));
+
+      drawDetail(false);
+      $('#detail').classList.add('on');
+      $('#detail').scrollTop = 0;
+    });
+
+    function drawDetail(done) {
+      const p = S.parties[cur];
+      const D = $('#detail');
+
+      if (done) {
+        D.innerHTML = `
+          <div class="pane center" data-a="close">
+            <div class="chk">✓</div>
+            <h2>¡Bienvenidos!</h2>
+            <p class="lbl">Su mesa es la</p>
+            <div class="big">${esc(p.table)}</div>
+            <p class="sub">Disfruten la celebración</p>
+            <button class="btn ghost" data-a="close">Listo</button>
+          </div>
+        `;
+        return;
+      }
+
+      const left = p.members.some(m => !m.in);
+
+      D.innerHTML = `
+        <div class="pane">
+          <div class="center">
+            <p class="lbl">Hola, ${esc(curName.split(' ')[0])}</p>
+            <p class="lbl" style="margin-top:0">Tu mesa es la</p>
+            <div class="big">${esc(p.table)}</div>
+          </div>
+          <p class="lbl">${left ? 'Toca a quienes ya llegaron contigo' : 'Todos ya están registrados'}</p>
+          ${p.members.map((m, j) => `
+            <button class="row ${m.in ? 'done' : sel.has(j) ? 'sel' : ''}" data-j="${j}" ${m.in ? 'disabled' : ''}>
+              <span class="box">${m.in || sel.has(j) ? '✓' : ''}</span>
+              ${esc(m.n)}
+            </button>
+          `).join('')}
+          ${left ? `<button class="btn" data-a="ok" ${sel.size ? '' : 'disabled'}>Confirmar llegada</button>` : ''}
+          <button class="btn ghost" data-a="close">Volver</button>
+        </div>
+      `;
+    }
+
+    function closeDetail() {
+      clearTimeout(tm);
+      $('#detail').classList.remove('on');
+      $('#q').value = '';
+      results();
+      foot();
+    }
+
+    $('#detail').addEventListener('click', e => {
+      const b = e.target.closest('[data-j],[data-a]');
+      if (!b) return;
+
+      if (b.dataset.j !== undefined) {
+        const j = +b.dataset.j;
+        sel.has(j) ? sel.delete(j) : sel.add(j);
+        drawDetail(false);
+      } else if (b.dataset.a === 'ok') {
+        const p = S.parties[cur];
+        sel.forEach(j => {
+          p.members[j].in = true;
+          p.members[j].t = Date.now();
+        });
+        save();
+        drawDetail(true);
+        clearTimeout(tm);
+        tm = setTimeout(closeDetail, 8000);
+      } else {
+        closeDetail();
+      }
+    });
+
+    /* Organizador */
+    $('#gear').onclick = () => {
+      const v = prompt('PIN del organizador');
+      if (v === null) return;
+      if (v.trim() !== S.cfg.pin) {
+        toast('PIN incorrecto');
+        return;
+      }
+      drawAdmin();
+      $('#admin').classList.add('on');
+    };
+
+    function drawAdmin() {
+      const [i, t] = stats();
+      const T = {};
+
+      S.parties.forEach(p => {
+        (T[p.table] = T[p.table] || []).push(...p.members);
+      });
+
+      const keys = Object.keys(T).sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+
+      $('#admin').innerHTML = `
+        <div class="pane ad">
+          <h2>Panel del organizador</h2>
+          <p>${i} de ${t} invitados registrados · ${S.parties.length} grupos · ${keys.length} mesas${S.demo ? ' · <b>lista inicial</b>' : ''}</p>
+
+          <h3>1. Cargar invitados</h3>
+          <p class="mut">Excel o CSV (en Google Sheets: Archivo › Descargar). Usa las columnas “Nombre Principal”, “Acompañante 1–4” y “Asistencia”. Si existe una columna “Mesa”, se respeta; si no, las mesas se asignan solas y cada grupo queda junto.</p>
+          <input type="file" id="file" accept=".xlsx,.xls,.csv"><br>
+          <button class="btn sm ghost" data-a="demo">Restaurar lista inicial</button>
+
+          <h3>2. Ajustes</h3>
+          <label>Nombres de los novios<input id="cn" value="${esc(S.cfg.names)}"></label>
+          <label>Personas por mesa<input id="cc" type="number" min="2" max="30" value="${S.cfg.cap}"></label>
+          <label>PIN del organizador<input id="cp" value="${esc(S.cfg.pin)}" maxlength="8"></label>
+          <button class="btn sm" data-a="save">Guardar y reasignar mesas</button>
+
+          <h3>3. Mesas</h3>
+          ${keys.map(k => `
+            <details>
+              <summary>Mesa ${esc(k)} · ${T[k].length}/${S.cfg.cap}</summary>
+              <ul>${T[k].map(m => `<li>${m.in ? '✓ ' : ''}${esc(m.n)}</li>`).join('')}</ul>
+            </details>
+          `).join('')}
+
+          <h3>4. Datos</h3>
+          <button class="btn sm ghost" data-a="copy">Copiar lista (CSV)</button>
+          <button class="btn sm ghost" data-a="reset">Borrar asistencia</button>
+          <button class="btn" data-a="shut">Cerrar panel</button>
+        </div>
+      `;
+    }
+
+    function load(rows) {
+      rows = rows.filter(r => r.some(c => String(c).trim()));
+      if (rows.length < 2) {
+        toast('No encontré invitados en el archivo');
+        return;
+      }
+
+      const h = rows[0].map(norm);
+      const mi = h.findIndex(x => x.startsWith('mesa'));
+      const ai = h.findIndex(x => x.startsWith('asistencia'));
+      const ci = h.findIndex(x => x.startsWith('cantidad'));
+
+      let main = h.findIndex(x => x.includes('principal'));
+      if (main < 0) main = h.findIndex(x => x.includes('nombre'));
+      if (main < 0) main = 0;
+
+      const cols = [main, ...h.map((x, j) => /acompa/.test(x) ? j : -1).filter(j => j >= 0)];
+
+      const P = rows
+        .slice(1)
+        .filter(r => ai < 0 || !/^no/.test(norm(r[ai])))
+        .map(r => {
+          const ms = dedupe(cols.map(j => r[j] || ''));
+          const t = mi >= 0 ? String(r[mi] || '').trim() : '';
+          return {
+            members: ms.map(n => ({ n, in: false })),
+            seats: Math.max(ms.length, ci >= 0 ? +r[ci] || 0 : 0),
+            table: t,
+            fixed: !!t
+          };
+        })
+        .filter(p => p.members.length);
+
+      if (!S.demo && S.parties.length && !confirm('Esto reemplazará la lista actual y la asistencia registrada. ¿Continuar?')) return;
+
+      S.parties = P;
+      S.demo = false;
+      assign();
+      save();
+      drawAdmin();
+      results();
+      foot();
+      toast('Se cargaron ' + P.length + ' grupos');
+    }
+
+    $('#admin').addEventListener('change', e => {
+      if (e.target.id !== 'file' || !e.target.files[0]) return;
+      const f = e.target.files[0];
+      const go = wb => load(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }));
+
+      try {
+        if (/\.csv$/i.test(f.name)) {
+          f.text().then(t => go(XLSX.read(t, { type: 'string' })));
+        } else {
+          f.arrayBuffer().then(b => go(XLSX.read(b, { type: 'array' })));
+        }
+      } catch (err) {
+        toast('No pude leer el archivo');
+      }
+    });
+
+    $('#admin').addEventListener('click', e => {
+      const b = e.target.closest('[data-a]');
+      if (!b) return;
+      const a = b.dataset.a;
+
+      if (a === 'shut') {
+        $('#admin').classList.remove('on');
+        results();
+        foot();
+      } else if (a === 'demo') {
+        if (S.demo || confirm('Esto reemplazará la lista actual. ¿Continuar?')) {
+          demo();
+          drawAdmin();
+          results();
+          foot();
+        }
+      } else if (a === 'save') {
+        S.cfg.names = $('#cn').value.trim() || S.cfg.names;
+        S.cfg.cap = Math.max(2, +$('#cc').value || 10);
+        S.cfg.pin = $('#cp').value.trim() || '1234';
+        assign();
+        save();
+        $('#names').textContent = S.cfg.names;
+        drawAdmin();
+        toast('Guardado');
+      } else if (a === 'reset') {
+        if (confirm('¿Borrar toda la asistencia registrada?')) {
+          S.parties.forEach(p => p.members.forEach(m => {
+            m.in = false;
+            delete m.t;
+          }));
+          save();
+          drawAdmin();
+          toast('Asistencia borrada');
+        }
+      } else if (a === 'copy') {
+        const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+        const lines = ['Mesa,Invitado,Registrado'];
+        S.parties.forEach(p => p.members.forEach(m => lines.push([q(p.table), q(m.n), m.in ? 'Sí' : 'No'].join(','))));
+
+        try {
+          navigator.clipboard.writeText(lines.join('\n')).then(
+            () => toast('Lista copiada'),
+            () => toast('No se pudo copiar')
+          );
+        } catch (err) {
+          toast('No se pudo copiar');
+        }
+      }
+    });
+
+    if (!S.parties.length) demo();
+    $('#names').textContent = S.cfg.names;
+    results();
+    foot();
+  </script>
+</body>
+</html>
